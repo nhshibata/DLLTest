@@ -2,7 +2,6 @@
 //
 
 // mono
-
 #pragma comment(lib, "mono-2.0-sgen.lib")
 #include <mono/jit/jit.h>
 #include <mono/metadata/assembly.h>
@@ -10,16 +9,30 @@
 #include <mono/metadata/appdomain.h>
 #include <mono/metadata/debug-helpers.h>
 #include <mono/metadata/exception.h>
-#include <iostream>
 
+#include <iostream>
+#include <muth.h>
+
+
+void ErPrint(MonoObject* excObject)
+{
+	// 異常なし
+	if (!excObject)
+		return;
+
+	MonoString* excMsg = mono_object_to_string(excObject, nullptr);
+	const char* msg = mono_string_to_utf8(excMsg);
+	std::cout << "関数実行時例外" << msg << std::endl;
+}
 
 int main()
 {
 	using namespace std;
+
 	// Moonoのアセンブリと設定ファイルのディレクトリをセットする
 	mono_set_dirs("./MonoAssembly/bin/", "./MonoAssembly/etc/");
 
-	// ドメイン(OSにおけるProcessのようなもの
+	// ドメイン(OSにおけるProcessのようなもの)
 	MonoDomain* domain = nullptr;
 	// 初期化
 	domain = mono_jit_init("CSScriptTest");
@@ -29,6 +42,12 @@ int main()
 		cout << "Monoの初期化失敗" << endl;
 		return 1;
 	}
+
+	// 指定のクラスに内部呼び出し対象として登録
+	// 上記の処理後でなくては読み取れない
+	mono_add_internal_call("CSScript.Class1::Multiply", &Multiply);
+
+
 
 #pragma region AssemblyLoad
 
@@ -57,8 +76,10 @@ int main()
 #pragma region CLASS_LOAD
 	// クラスの型
 	MonoClass* mainClass = nullptr;
+	MonoClass* typeClass = nullptr;
 	mainClass = mono_class_from_name(assemblyImage, "CSScript", "Class1");
-	if (!mainClass)
+	typeClass = mono_class_from_name(assemblyImage, "CSScript", "TypeSizeInfo");
+	if (!mainClass || !typeClass)
 	{
 		cout << "クラスの型取得に失敗" << endl;
 		mono_jit_cleanup(domain);
@@ -81,7 +102,9 @@ int main()
 #pragma region CLASS_FUNC
 	// 関数情報読み込み
 	MonoMethodDesc* methodDesc = nullptr;
-	methodDesc = mono_method_desc_new("CSScript.Class1::PrintMessage()", true);
+	//methodDesc = mono_method_desc_new("CSScript.Class1::PrintMessage()", true);
+	methodDesc = mono_method_desc_new("CSScript.Class1::PrintMessage2()", true);
+	
 	if (!methodDesc)
 	{
 		cout << "関数情報の定義作成に失敗" << endl;
@@ -91,14 +114,71 @@ int main()
 
 	// スクリプト関数
 	MonoMethod* method = nullptr;
+	MonoMethod* method2 = nullptr;
 	// 関数情報定義をもとに、クラス内の関数を検索
 	method = mono_method_desc_search_in_class(methodDesc, mainClass);
+	method2 = mono_class_get_method_from_name(typeClass, "StringToSize", 1);// 第3引き数で関数の引き数がいくつか教える
 	if (!method)
 	{
 		cout << "関数取得に失敗" << endl;
 		mono_jit_cleanup(domain);
 		return 1;
 	}
+#pragma endregion
+
+#pragma region PROPERTY_LOAD
+
+	cout << "---プロパティを出力確認---\n";
+	MonoProperty* prop = nullptr;
+	void* ptr = nullptr;
+	void* data = nullptr;
+	while (prop = mono_class_get_properties(mainClass, &ptr))
+	{
+		cout << mono_property_get_name(prop) << endl;
+		cout << mono_property_get_flags(prop) << endl;
+
+		// methodとしてpropertyを受け取る
+		auto pGet = mono_property_get_get_method(prop);
+		//auto pSet = mono_property_get_set_method(prop);
+
+		// インスタンスから関数ポインタを通じて実際の値を受け取る
+		MonoObject* excObject = nullptr;
+		auto pObj = mono_runtime_invoke(pGet, instance, nullptr, &excObject);
+		ErPrint(excObject); // エラー処理
+		
+		// 型サイズ取得
+		auto type = mono_signature_get_return_type(
+			mono_method_signature(pGet));
+		auto typeName = mono_type_get_name(type);
+		
+		cout << (typeName) << endl;
+		
+		MonoString* monoTypeName = mono_string_new(domain, typeName);
+		void* args[1];
+		args[0] = monoTypeName;
+		auto pSize = mono_runtime_invoke(method2, nullptr, args, nullptr);
+		int size = *(int*)mono_object_unbox(pSize);
+		cout << (size) << endl;
+
+		// string用
+		//if (mono_type_is_reference(type))
+		//{
+		//	if (size == -1)
+		//	{
+		//		data = mono_string_to_utf8((MonoString*)pObj);
+		//	}
+		//}
+		//else
+		//{
+		//	// 値型であればunbox化する
+		//	auto ubx = (MonoObject*)mono_object_unbox(pObj);
+		//	memcpy(data, ubx, size);
+		//}
+		cout << (data) << endl;
+
+	}
+	cout << "\n---プロパティ確認終了---\n";
+
 #pragma endregion
 
 	// 関数呼び出し
@@ -128,14 +208,3 @@ int main()
 
 	return 0;
 }
-
-// プログラムの実行: Ctrl + F5 または [デバッグ] > [デバッグなしで開始] メニュー
-// プログラムのデバッグ: F5 または [デバッグ] > [デバッグの開始] メニュー
-
-// 作業を開始するためのヒント: 
-//    1. ソリューション エクスプローラー ウィンドウを使用してファイルを追加/管理します 
-//   2. チーム エクスプローラー ウィンドウを使用してソース管理に接続します
-//   3. 出力ウィンドウを使用して、ビルド出力とその他のメッセージを表示します
-//   4. エラー一覧ウィンドウを使用してエラーを表示します
-//   5. [プロジェクト] > [新しい項目の追加] と移動して新しいコード ファイルを作成するか、[プロジェクト] > [既存の項目の追加] と移動して既存のコード ファイルをプロジェクトに追加します
-//   6. 後ほどこのプロジェクトを再び開く場合、[ファイル] > [開く] > [プロジェクト] と移動して .sln ファイルを選択します
