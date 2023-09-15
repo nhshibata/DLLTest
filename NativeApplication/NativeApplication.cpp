@@ -131,9 +131,10 @@ int main()
 	cout << "---プロパティを出力確認---\n";
 	MonoProperty* prop = nullptr;
 	void* ptr = nullptr;
-	void* data = nullptr;
+	void* data = nullptr; // ゲッターの中身を入れる
 	while (prop = mono_class_get_properties(mainClass, &ptr))
 	{
+		// プロパティ情報
 		cout << mono_property_get_name(prop) << endl;
 		cout << mono_property_get_flags(prop) << endl;
 
@@ -144,37 +145,45 @@ int main()
 		// インスタンスから関数ポインタを通じて実際の値を受け取る
 		MonoObject* excObject = nullptr;
 		auto pObj = mono_runtime_invoke(pGet, instance, nullptr, &excObject);
-		ErPrint(excObject); // エラー処理
+		ErPrint(excObject); // エラー
 		
 		// 型サイズ取得
 		auto type = mono_signature_get_return_type(
 			mono_method_signature(pGet));
 		auto typeName = mono_type_get_name(type);
-		
+		// 型の種類出力
 		cout << (typeName) << endl;
 		
+		// 型名を変換
 		MonoString* monoTypeName = mono_string_new(domain, typeName);
+		// 関数に渡す引き数
 		void* args[1];
 		args[0] = monoTypeName;
+		// 型サイズクラスからサイズを取得
 		auto pSize = mono_runtime_invoke(method2, nullptr, args, nullptr);
+		// int型として受け取る
 		int size = *(int*)mono_object_unbox(pSize);
 		cout << (size) << endl;
 
+		// メモリコピー用に確保
+		data = malloc(size);
 		// string用
-		//if (mono_type_is_reference(type))
-		//{
-		//	if (size == -1)
-		//	{
-		//		data = mono_string_to_utf8((MonoString*)pObj);
-		//	}
-		//}
-		//else
-		//{
-		//	// 値型であればunbox化する
-		//	auto ubx = (MonoObject*)mono_object_unbox(pObj);
-		//	memcpy(data, ubx, size);
-		//}
+		if (mono_type_is_reference(type))
+		{
+			if (size == -1)
+			{
+				data = mono_string_to_utf8((MonoString*)pObj);
+			}
+		}
+		else
+		{
+			// 値型であればunbox化するらしい
+			MonoObject* ubx = nullptr;
+			ubx = (MonoObject*)mono_object_unbox(pObj);
+			std::memcpy(data, ubx, size);
+		}
 		cout << (data) << endl;
+		free(data);
 
 	}
 	cout << "\n---プロパティ確認終了---\n";

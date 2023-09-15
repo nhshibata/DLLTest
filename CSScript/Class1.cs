@@ -5,15 +5,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+/// <summary>
+/// unsafe追加
+/// プロパティ変更
+/// </summary>
 namespace CSScript
 {
-    public class Class1
+    unsafe public class Class1
     {
-        int m_cnt = 0;
-        string m_name = "first";
+        unsafe int m_cnt = 123;
+        unsafe string m_name = "first";
 
-        public int Cnt { get => m_cnt; set => m_cnt = value; }
-        public string Name { get => m_name; set => m_name = value; }
+        unsafe public int Cnt { get => m_cnt; set => m_cnt = value; }
+        unsafe public string Name { get => m_name; set => m_name = value; }
 
         void PrintMessage()
         {
