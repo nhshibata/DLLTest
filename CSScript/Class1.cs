@@ -9,6 +9,11 @@ namespace CSScript
 {
     public class Class1
     {
+        int m_cnt = 0;
+        string m_name = "first";
+
+        public int Cnt { get => m_cnt; set => m_cnt = value; }
+        public string Name { get => m_name; set => m_name = value; }
 
         void PrintMessage()
         {
@@ -23,7 +28,7 @@ namespace CSScript
         void PrintMessage2()
         {
             // C++の関数を内部呼び出し
-            Console.WriteLine("2*3=" + Multiply(2, 3));
+            Console.WriteLine("2 * 3 =" + Multiply(2, 3));
         }
     }
 }
