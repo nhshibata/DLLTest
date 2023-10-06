@@ -1,0 +1,17 @@
+
+リンクテスト用のソリューション
+本来はhだけでなくcppも作成するが、テストなので省略
+
+Application(DLL)
+	画面立ち上げ
+Graphic(DLL)
+	DirectX部分
+Core(lib)
+	構造体など定義
+	他プロジェクトの基準など
+Debug(DLL)
+	デバッグ用
+Game(DLL)
+	ゲームループ
+
+
