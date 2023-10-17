@@ -1,6 +1,6 @@
 #pragma once
 
-#include "define.h"
+#include "debugDefine.h"
 #include <Singleton.h>
 
 //class  __declspec(dllexport) CDebug //: public Cookie::Singleton<CDebug>

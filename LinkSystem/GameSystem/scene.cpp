@@ -39,3 +39,4 @@ std::vector<Cookie::GameObject*> DLLEXPORT_CLASS CScene::GetList()
 {
 	return m_aObject;
 }
+
