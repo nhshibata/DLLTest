@@ -1,9 +1,10 @@
 
 リンクテスト用のソリューション
-本来はhだけでなくcppも作成するが、テストなので省略
+本来はhだけでなくcppも作成するが、テストなので省略する場合も
+プロパティ設定でLibraryフォルダに出力するように設定。ビルド後にLibrary内のexeを実行可能。
+DebugとReleaseを一緒にしている。Dと付いていればDebug。
 
-Application(DLL)
-	画面立ち上げ
+
 Graphic(DLL)
 	DirectX部分
 Core(lib)
