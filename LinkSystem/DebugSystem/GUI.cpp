@@ -4,6 +4,7 @@
 
 
 DLLEXPORT_CLASS GUI::GUI()
+	:m_hGameDLL(NULL),m_pProc(nullptr)
 {
 	
 }
